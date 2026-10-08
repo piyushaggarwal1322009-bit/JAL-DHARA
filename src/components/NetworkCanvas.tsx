@@ -1,11 +1,48 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { ReactFlow, Controls, Handle, MarkerType, Position, type Edge, type Node, type NodeProps } from "@xyflow/react";
+import { MapPin, Ruler } from "lucide-react";
 import type { SimulationInput, SimulationResult } from "@/lib/model";
+import { allTankDistances, minimumConnectionTree } from "@/lib/geo";
+import { isSiteFeature, SITE_DATA_KEY, type SiteFeature } from "@/lib/site-data";
 
 export type Selection = { type: "tank" | "channel"; id: string } | null;
 const format = (value: number) => new Intl.NumberFormat("en-IN").format(value);
+const formatDistance = (meters: number) => meters >= 1000 ? `${(meters / 1000).toFixed(2)} km` : `${Math.round(meters)} m`;
+
+function MappedLocations({ tanks }: { tanks: SiteFeature[] }) {
+  const links = useMemo(() => minimumConnectionTree(tanks), [tanks]);
+  const width = 820;
+  const height = 440;
+  const minLng = Math.min(...tanks.map((tank) => tank.longitude));
+  const maxLng = Math.max(...tanks.map((tank) => tank.longitude));
+  const minLat = Math.min(...tanks.map((tank) => tank.latitude));
+  const maxLat = Math.max(...tanks.map((tank) => tank.latitude));
+  const spanLng = maxLng - minLng || 0.01;
+  const spanLat = maxLat - minLat || 0.01;
+  const points = new Map(tanks.map((tank) => [tank.id, {
+    x: tanks.length === 1 ? width / 2 : 105 + ((tank.longitude - minLng) / spanLng) * (width - 210),
+    y: tanks.length === 1 ? height / 2 : 90 + ((maxLat - tank.latitude) / spanLat) * (height - 180),
+  }]));
+  const pairs = allTankDistances(tanks);
+  return <div className="mapped-canvas-view">
+    <div className="mapped-canvas-toolbar"><span><MapPin size={15} /> {tanks.length} mapped {tanks.length === 1 ? "tank" : "tanks"}</span><Link href="/network"><Ruler size={14} /> All distances and cost <span aria-hidden>↗</span></Link></div>
+    <div className="mapped-canvas-diagram"><svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Mapped tanks with straight-line distances between nearest connections">
+      {links.map((link) => {
+        const from = points.get(link.from.id)!; const to = points.get(link.to.id)!;
+        const x = (from.x + to.x) / 2; const y = (from.y + to.y) / 2;
+        return <g key={`${link.from.id}-${link.to.id}`}><line x1={from.x} y1={from.y} x2={to.x} y2={to.y} className="mapped-canvas-line" /><rect x={x - 42} y={y - 14} width="84" height="28" rx="14" className="mapped-canvas-distance-bg" /><text x={x} y={y + 5} className="mapped-canvas-distance">{formatDistance(link.meters)}</text></g>;
+      })}
+      {tanks.map((tank, index) => {
+        const point = points.get(tank.id)!;
+        return <g key={tank.id} className="mapped-canvas-tank"><rect x={point.x - 91} y={point.y - 40} width="182" height="80" rx="16" /><circle cx={point.x - 68} cy={point.y - 14} r="12" /><text x={point.x - 68} y={point.y - 10} className="mapped-canvas-index">{index + 1}</text><text x={point.x - 48} y={point.y - 10} className="mapped-canvas-name">{tank.name.length > 18 ? `${tank.name.slice(0, 17)}…` : tank.name}</text><text x={point.x - 68} y={point.y + 17} className="mapped-canvas-coordinate">{tank.latitude.toFixed(4)}°, {tank.longitude.toFixed(4)}°</text><title>{`${tank.name} · ${tank.latitude.toFixed(6)}, ${tank.longitude.toFixed(6)}`}</title></g>;
+      })}
+    </svg></div>
+    <div className="mapped-canvas-foot"><span><i /> Proposed nearest connections</span><span>{pairs.length} measured pairs · straight-line distance</span></div>
+  </div>;
+}
 
 interface TankNodeData extends Record<string, unknown> {
   letter: string; name: string; village: string; storage: number;
@@ -40,6 +77,23 @@ interface Props {
 
 export function NetworkCanvas({ input, result, selection, restoredIds, onSelect }: Props) {
   const [showFlow, setShowFlow] = useState(false);
+  const [mappedTanks, setMappedTanks] = useState<SiteFeature[]>([]);
+  const [networkView, setNetworkView] = useState<"mapped" | "simulation">("simulation");
+  useEffect(() => {
+    const read = () => {
+      try {
+        const raw = localStorage.getItem(SITE_DATA_KEY);
+        const parsed: unknown = raw ? JSON.parse(raw) : [];
+        const tanks = Array.isArray(parsed) ? parsed.filter(isSiteFeature).filter((feature) => feature.kind === "tank") : [];
+        setMappedTanks(tanks);
+        if (tanks.length) setNetworkView("mapped");
+      } catch { setMappedTanks([]); }
+    };
+    read();
+    window.addEventListener("storage", read);
+    window.addEventListener("focus", read);
+    return () => { window.removeEventListener("storage", read); window.removeEventListener("focus", read); };
+  }, []);
   useEffect(() => {
     const media = window.matchMedia("(min-width: 641px)");
     const update = () => setShowFlow(media.matches);
@@ -82,8 +136,12 @@ export function NetworkCanvas({ input, result, selection, restoredIds, onSelect 
       <div className="canvas-header">
         <div><h2>Water network</h2><p>Select a tank or channel to inspect it.</p></div>
       </div>
+      {mappedTanks.length > 0 && <div className="network-view-switch" role="tablist" aria-label="Network view">
+        <button role="tab" aria-selected={networkView === "mapped"} className={networkView === "mapped" ? "selected" : ""} onClick={() => setNetworkView("mapped")}><MapPin size={14} /> Map locations</button>
+        <button role="tab" aria-selected={networkView === "simulation"} className={networkView === "simulation" ? "selected" : ""} onClick={() => setNetworkView("simulation")}>Simulation flow</button>
+      </div>}
       <div className="flow-wrap">
-        <div className="desktop-flow">{showFlow && <ReactFlow nodes={nodes} edges={edges} nodeTypes={nodeTypes} fitView fitViewOptions={{ padding: 0.1, minZoom: 0.5, maxZoom: 1 }}
+        {networkView === "mapped" && mappedTanks.length > 0 ? <MappedLocations tanks={mappedTanks} /> : <><div className="desktop-flow">{showFlow && <ReactFlow nodes={nodes} edges={edges} nodeTypes={nodeTypes} fitView fitViewOptions={{ padding: 0.1, minZoom: 0.5, maxZoom: 1 }}
           nodesDraggable={false} nodesConnectable={false} elementsSelectable
           minZoom={0.5} maxZoom={1.35}
           onInit={(instance) => { requestAnimationFrame(() => instance.fitView({ padding: 0.1, minZoom: 0.5, maxZoom: 1 })); }}
@@ -91,8 +149,7 @@ export function NetworkCanvas({ input, result, selection, restoredIds, onSelect 
           onEdgeClick={(_, edge) => onSelect({ type: "channel", id: edge.id })}
           onPaneClick={() => onSelect(null)}>
           <Controls showInteractive={false} className="canvas-controls" />
-        </ReactFlow>}</div>
-        <div className="mobile-network-list">
+        </ReactFlow>}</div><div className="mobile-network-list">
           {input.tanks.map((tank, index) => {
             const village = input.villages.find((item) => item.tankId === tank.id);
             const balance = result?.tankBalances.find((item) => item.tankId === tank.id);
@@ -108,11 +165,11 @@ export function NetworkCanvas({ input, result, selection, restoredIds, onSelect 
               </button>}
             </div>;
           })}
-        </div>
+        </div></>}
       </div>
-      <div className="canvas-footer">
+      {networkView === "simulation" && <div className="canvas-footer">
         <div className="legend"><span><i className="legend-line flow" /> Flowing</span><span><i className="legend-line blocked" /> Blocked</span><span><i className="legend-line idle" /> No transfer</span></div>
-      </div>
+      </div>}
     </section>
   );
 }

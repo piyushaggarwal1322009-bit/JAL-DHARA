@@ -174,6 +174,28 @@ a { color: inherit; text-decoration: none; }
 .canvas-state { display: none; }
 .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--success); }
 .flow-wrap { position: relative; flex: 1; min-height: 510px; overflow: hidden; border: 1px solid var(--line); border-radius: var(--radius-card); background: var(--surface); }
+.network-view-switch { display: inline-flex; align-self: flex-start; gap: 4px; margin: -10px 0 12px; padding: 4px; border: 1px solid var(--glass-line); border-radius: 999px; background: color-mix(in srgb, var(--surface-subtle) 70%, transparent); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+.network-view-switch button { display: inline-flex; min-height: 36px; align-items: center; justify-content: center; gap: 7px; padding: 6px 12px; border: 1px solid transparent; border-radius: 999px; background: transparent; color: var(--muted); font-size: 13px; font-weight: 550; }
+.network-view-switch button.selected { border-color: var(--glass-line); background: var(--glass-fill); color: var(--text); box-shadow: 0 4px 14px rgba(0, 0, 0, .08); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+.mapped-canvas-view { display: flex; width: 100%; height: 100%; min-height: 510px; flex-direction: column; padding: 14px 18px 12px; }
+.mapped-canvas-toolbar, .mapped-canvas-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: var(--muted); font-size: 12px; }
+.mapped-canvas-toolbar > span, .mapped-canvas-toolbar a, .mapped-canvas-foot > span { display: inline-flex; align-items: center; gap: 7px; }
+.mapped-canvas-toolbar > span svg { color: var(--accent); }
+.mapped-canvas-toolbar a { color: var(--accent); font-weight: 600; }
+.mapped-canvas-diagram { display: grid; flex: 1; min-height: 0; place-items: center; }
+.mapped-canvas-diagram svg { display: block; width: 100%; max-height: 390px; overflow: visible; }
+.mapped-canvas-line { stroke: color-mix(in srgb, var(--accent) 76%, var(--line)); stroke-width: 3; stroke-linecap: round; }
+.mapped-canvas-distance-bg { fill: var(--surface); stroke: color-mix(in srgb, var(--accent) 32%, var(--line)); stroke-width: 1; }
+.mapped-canvas-distance { fill: var(--accent); font-size: 13px; font-weight: 700; text-anchor: middle; font-variant-numeric: tabular-nums; }
+.mapped-canvas-tank rect { fill: color-mix(in srgb, var(--surface) 86%, transparent); stroke: var(--glass-line); stroke-width: 1.5; }
+.mapped-canvas-tank circle { fill: color-mix(in srgb, var(--accent-soft) 85%, transparent); stroke: color-mix(in srgb, var(--accent) 34%, transparent); stroke-width: 1; }
+.mapped-canvas-index { fill: var(--accent); font-size: 11px; font-weight: 700; text-anchor: middle; }
+.mapped-canvas-name { fill: var(--text); font-size: 15px; font-weight: 650; }
+.mapped-canvas-coordinate { fill: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.mapped-canvas-foot { justify-content: flex-start; padding-top: 10px; border-top: 1px solid var(--line); }
+.mapped-canvas-foot > span:first-child { color: var(--text); }
+.mapped-canvas-foot i { width: 14px; height: 3px; border-radius: 2px; background: var(--accent); }
+.mapped-canvas-foot > span + span { margin-left: auto; }
 .desktop-flow { position: absolute; inset: 0; }
 .mobile-network-list { display: none; }
 .react-flow { background: transparent !important; }
