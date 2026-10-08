@@ -6,9 +6,10 @@ const byId = (a: { id: string }, b: { id: string }) => a.id.localeCompare(b.id);
 
 function allocate(availableL: number, demands: WaterDemand[], mode: SimulationInput["policy"]["mode"]): Map<string, number> {
   const delivered = new Map(demands.map((item) => [item.id, 0]));
-  if (mode === "householdFirst") {
+  if (mode === "householdFirst" || mode === "irrigationFirst") {
     let remaining = availableL;
-    const ordered = [...demands].sort((a, b) => (a.kind === b.kind ? byId(a, b) : a.kind === "household" ? -1 : 1));
+    const preferredKind = mode === "householdFirst" ? "household" : "irrigation";
+    const ordered = [...demands].sort((a, b) => (a.kind === b.kind ? byId(a, b) : a.kind === preferredKind ? -1 : 1));
     ordered.forEach((item) => {
       const amount = Math.min(remaining, item.amountL);
       delivered.set(item.id, amount); remaining -= amount;
@@ -18,6 +19,23 @@ function allocate(availableL: number, demands: WaterDemand[], mode: SimulationIn
   const totalDemand = sum(demands.map((item) => item.amountL));
   const allocatable = Math.min(availableL, totalDemand);
   if (totalDemand === 0) return delivered;
+  if (mode === "equalShare") {
+    let low = 0;
+    let high = Math.max(...demands.map((item) => item.amountL));
+    while (low < high) {
+      const mid = Math.ceil((low + high) / 2);
+      if (sum(demands.map((item) => Math.min(item.amountL, mid))) <= allocatable) low = mid;
+      else high = mid - 1;
+    }
+    demands.forEach((item) => delivered.set(item.id, Math.min(item.amountL, low)));
+    let leftover = allocatable - sum([...delivered.values()]);
+    for (const item of [...demands].sort(byId)) {
+      if (!leftover) break;
+      const current = delivered.get(item.id) ?? 0;
+      if (current < item.amountL) { delivered.set(item.id, current + 1); leftover--; }
+    }
+    return delivered;
+  }
   const shares = demands.map((item) => {
     const exact = allocatable * item.amountL / totalDemand;
     const floor = Math.floor(exact);

@@ -17,7 +17,7 @@ export interface RepairAction {
   restoredCapacityL: number; restoredEfficiency: number;
   feasibilityNote?: string;
 }
-export interface CommunityPolicy { mode: "householdFirst" | "proportional" }
+export interface CommunityPolicy { mode: "householdFirst" | "irrigationFirst" | "proportional" | "equalShare" }
 export interface SimulationInput {
   schemaVersion: 1; villages: Village[]; tanks: Tank[];
   channels: WaterChannel[]; demands: WaterDemand[];

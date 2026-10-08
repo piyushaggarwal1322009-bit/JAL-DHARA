@@ -23,7 +23,7 @@ export const simulationInputSchema = z.strictObject({
   schemaVersion: z.literal(1), villages: z.array(village).max(40), tanks: z.array(tank).min(1).max(20),
   channels: z.array(channel).max(40), demands: z.array(demand).max(80), repairs: z.array(repair).max(8),
   rainfall: z.strictObject({ id, label: z.string().min(1).max(80), rainfallMm: z.number().finite().min(0).max(500) }),
-  policy: z.strictObject({ mode: z.enum(["householdFirst", "proportional"]) }),
+  policy: z.strictObject({ mode: z.enum(["householdFirst", "irrigationFirst", "proportional", "equalShare"]) }),
 });
 
 function unique(items: { id: string }[], label: string) {

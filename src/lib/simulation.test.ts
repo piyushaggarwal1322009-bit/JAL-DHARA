@@ -35,6 +35,20 @@ describe("illustrative tank cascade", () => {
     expect([first.deliveredL, proportional.deliveredL]).toEqual([200, 200]);
   });
 
+  it("supports irrigation priority and an equal starting share", () => {
+    const input = freshDemoInput();
+    input.rainfall.rainfallMm = 2;
+    input.policy.mode = "irrigationFirst";
+    const irrigationFirst = simulate(input);
+    expect(irrigationFirst.villageDeliveries[0].householdDeliveredL).toBe(0);
+    expect(irrigationFirst.villageDeliveries[0].irrigationDeliveredL).toBe(200);
+    input.policy.mode = "equalShare";
+    const equalShare = simulate(input);
+    expect(equalShare.villageDeliveries[0].householdDeliveredL).toBe(100);
+    expect(equalShare.villageDeliveries[0].irrigationDeliveredL).toBe(100);
+    expect(equalShare.balanceResidualL).toBe(0);
+  });
+
   it("rejects a cyclic network", () => {
     const input = freshDemoInput();
     input.channels.push({ id: "d-a", sourceTankId: "d", targetTankId: "a", priority: 1, condition: "functional", capacityL: 100, efficiency: 1 });

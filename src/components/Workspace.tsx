@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { ArrowDownToLine, ArrowRight, Check, ChevronDown, CircleAlert, Droplets, RotateCcw, ShieldCheck, SlidersHorizontal, Sparkles, Wrench } from "lucide-react";
 import { DEMO_INPUT, freshDemoInput } from "@/lib/fixture";
 import type { AIExtractedReport, OptimizationResult, SimulationInput, SimulationResult, WaterChannel } from "@/lib/model";
@@ -20,6 +20,29 @@ function Metric({ label, value, suffix, tone, note }: { label: string; value: nu
 
 function currentStatus(channel: WaterChannel) {
   return channel.condition === "blocked" ? "Blocked" : channel.condition === "degraded" ? "Degraded" : "Functional";
+}
+
+const policies: { value: SimulationInput["policy"]["mode"]; label: string; description: string }[] = [
+  { value: "householdFirst", label: "Households first", description: "Prioritizes essential household demand." },
+  { value: "irrigationFirst", label: "Irrigation first", description: "Prioritizes water for crops." },
+  { value: "proportional", label: "Proportional", description: "Shares available water by each request’s size." },
+  { value: "equalShare", label: "Equal share", description: "Shares the same starting amount across requests." },
+];
+
+function PolicyPicker({ value, onChange }: { value: SimulationInput["policy"]["mode"]; onChange: (value: SimulationInput["policy"]["mode"]) => void }) {
+  const [open, setOpen] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const active = policies.find((policy) => policy.value === value) ?? policies[0];
+  return <div className={`policy-picker ${open ? "is-open" : ""}`}>
+    <button ref={triggerRef} className="policy-trigger" type="button" aria-labelledby="policy-label" aria-haspopup="listbox" aria-expanded={open} onClick={() => setOpen(!open)} onKeyDown={(event) => { if (event.key === "Escape") setOpen(false); }}>
+      <span>{active.label}</span><ChevronDown size={17} className={open ? "rotated" : ""} />
+    </button>
+    {open && <div className="policy-menu" role="listbox" aria-label="Water-sharing rule" onKeyDown={(event) => { if (event.key === "Escape") { setOpen(false); triggerRef.current?.focus(); } }}>
+      {policies.map((policy) => <button key={policy.value} type="button" role="option" aria-selected={policy.value === value} className={`policy-option ${policy.value === value ? "selected" : ""}`} onClick={() => { onChange(policy.value); setOpen(false); triggerRef.current?.focus(); }}>
+        <span className="policy-option-copy"><strong>{policy.label}</strong><small>{policy.description}</small></span>{policy.value === value && <Check size={16} />}
+      </button>)}
+    </div>}
+  </div>;
 }
 
 export function Workspace() {
@@ -162,10 +185,9 @@ export function Workspace() {
           <div className="form-group"><label htmlFor="budget">Repair budget <span>INR</span></label>
             <div className="input-with-unit"><input id="budget" type="number" min="0" max="1000000000" step="1" value={budgetText} onChange={(event) => { setBudgetText(event.target.value); setRecommendation(null); }} /><span>₹</span></div>
             {invalidBudget && <small className="field-error">Enter a whole-rupee budget.</small>}</div>
-          <div className="form-group"><label htmlFor="policy">Water-sharing rule</label>
-            <div className="select-wrap"><select id="policy" value={scenario.policy.mode} onChange={(event) => edit({ ...scenario, policy: { mode: event.target.value as SimulationInput["policy"]["mode"] } })}>
-              <option value="householdFirst">Households first</option><option value="proportional">Proportional</option></select><ChevronDown size={16} /></div>
-            <small>Choose how limited water is shared.</small></div>
+          <div className="form-group"><label id="policy-label">Water-sharing rule</label>
+            <PolicyPicker value={scenario.policy.mode} onChange={(mode) => edit({ ...scenario, policy: { mode } })} />
+            <small id="policy-help">{policies.find((policy) => policy.value === scenario.policy.mode)?.description}</small></div>
 
           <div className="section-rule" />
           <div className="panel-heading"><h3 className="form-section-title">Selected component</h3>{selection && <span className="inspector-count">{selection.type === "tank" ? "Tank" : "Channel"}</span>}</div>
