@@ -22,6 +22,16 @@ describe("illustrative tank cascade", () => {
       .toEqual([0, 500, 500]);
   });
 
+  it("counts water beyond an overflowing channel's capacity as external spill", () => {
+    const input = freshDemoInput();
+    input.channels[0].condition = "overflowing";
+    input.channels[0].capacityL = 200;
+    const result = simulate(input);
+    expect(result.channelFlows[0].sentL).toBe(200);
+    expect(result.tankBalances[0].externalSpillL).toBe(3800);
+    expect(result.balanceResidualL).toBe(0);
+  });
+
   it("changes scarce-water allocation without changing total delivery", () => {
     const input = freshDemoInput();
     input.rainfall.rainfallMm = 2;

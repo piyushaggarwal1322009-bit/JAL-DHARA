@@ -11,7 +11,7 @@ const tank = z.strictObject({
 });
 const channel = z.strictObject({
   id, sourceTankId: id, targetTankId: id, priority: z.number().int().min(0).max(1000),
-  condition: z.enum(["functional", "degraded", "blocked"]), capacityL: volume, efficiency: fraction,
+  condition: z.enum(["functional", "degraded", "blocked", "overflowing"]), capacityL: volume, efficiency: fraction,
 });
 const demand = z.strictObject({ id, villageId: id, kind: z.enum(["household", "irrigation"]), amountL: volume });
 const repair = z.strictObject({

@@ -89,6 +89,7 @@ export function simulate(rawInput: SimulationInput): SimulationResult {
     const remainingL = availableL - deliveredL;
     const finalStorageL = Math.min(tank.capacityL, remainingL);
     let surplusL = remainingL - finalStorageL;
+    let channelOverflowL = 0;
     const outgoing = input.channels.filter((item) => item.sourceTankId === tankId)
       .sort((a, b) => a.priority - b.priority || a.id.localeCompare(b.id));
     outgoing.forEach((edge) => {
@@ -98,8 +99,9 @@ export function simulate(rawInput: SimulationInput): SimulationResult {
       incoming.set(edge.targetTankId, (incoming.get(edge.targetTankId) ?? 0) + receivedL);
       const flow = flowById.get(edge.id)!;
       flow.sentL = sentL; flow.receivedL = receivedL; flow.lossL = sentL - receivedL;
+      if (edge.condition === "overflowing") { channelOverflowL += surplusL; surplusL = 0; }
     });
-    tankBalances.push({ tankId, runoffL, incomingL, deliveredL, finalStorageL, externalSpillL: surplusL });
+    tankBalances.push({ tankId, runoffL, incomingL, deliveredL, finalStorageL, externalSpillL: surplusL + channelOverflowL });
   }
 
   const rainfallRunoffL = sum(tankBalances.map((item) => item.runoffL));

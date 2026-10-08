@@ -13,6 +13,7 @@ const format = (value: number) => new Intl.NumberFormat("en-IN").format(value);
 const formatDistance = (meters: number) => meters >= 1000 ? `${(meters / 1000).toFixed(2)} km` : `${Math.round(meters)} m`;
 
 function MappedLocations({ tanks }: { tanks: SiteFeature[] }) {
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const links = useMemo(() => minimumConnectionTree(tanks), [tanks]);
   const width = 820;
   const height = 440;
@@ -29,7 +30,7 @@ function MappedLocations({ tanks }: { tanks: SiteFeature[] }) {
   const pairs = allTankDistances(tanks);
   return <div className="mapped-canvas-view">
     <div className="mapped-canvas-toolbar"><span><MapPin size={15} /> {tanks.length} mapped {tanks.length === 1 ? "tank" : "tanks"}</span><Link href="/network"><Ruler size={14} /> All distances and cost <span aria-hidden>↗</span></Link></div>
-    <div className="mapped-canvas-diagram"><svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Mapped tanks with straight-line distances between nearest connections">
+    <div className="mapped-canvas-diagram"><svg viewBox={`0 0 ${width} ${height}`} role="group" aria-label="Mapped tanks with straight-line distances between nearest connections">
       {links.map((link) => {
         const from = points.get(link.from.id)!; const to = points.get(link.to.id)!;
         const x = (from.x + to.x) / 2; const y = (from.y + to.y) / 2;
@@ -37,10 +38,11 @@ function MappedLocations({ tanks }: { tanks: SiteFeature[] }) {
       })}
       {tanks.map((tank, index) => {
         const point = points.get(tank.id)!;
-        return <g key={tank.id} className="mapped-canvas-tank"><rect x={point.x - 91} y={point.y - 40} width="182" height="80" rx="16" /><circle cx={point.x - 68} cy={point.y - 14} r="12" /><text x={point.x - 68} y={point.y - 10} className="mapped-canvas-index">{index + 1}</text><text x={point.x - 48} y={point.y - 10} className="mapped-canvas-name">{tank.name.length > 18 ? `${tank.name.slice(0, 17)}…` : tank.name}</text><text x={point.x - 68} y={point.y + 17} className="mapped-canvas-coordinate">{tank.latitude.toFixed(4)}°, {tank.longitude.toFixed(4)}°</text><title>{`${tank.name} · ${tank.latitude.toFixed(6)}, ${tank.longitude.toFixed(6)}`}</title></g>;
+        return <g key={tank.id} className={`mapped-canvas-tank ${selectedId === tank.id ? "selected" : ""}`} role="button" tabIndex={0} aria-label={`Select mapped location ${tank.name}`} aria-pressed={selectedId === tank.id} onClick={() => setSelectedId(tank.id)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setSelectedId(tank.id); } }}><rect x={point.x - 91} y={point.y - 40} width="182" height="80" rx="16" /><circle cx={point.x - 68} cy={point.y - 14} r="12" /><text x={point.x - 68} y={point.y - 10} className="mapped-canvas-index">{index + 1}</text><text x={point.x - 48} y={point.y - 10} className="mapped-canvas-name">{tank.name.length > 18 ? `${tank.name.slice(0, 17)}…` : tank.name}</text><text x={point.x - 68} y={point.y + 17} className="mapped-canvas-coordinate">{tank.latitude.toFixed(4)}°, {tank.longitude.toFixed(4)}°</text><title>{`${tank.name} · ${tank.latitude.toFixed(6)}, ${tank.longitude.toFixed(6)}`}</title></g>;
       })}
     </svg></div>
     <div className="mapped-canvas-foot"><span><i /> Proposed nearest connections</span><span>{pairs.length} measured pairs · straight-line distance</span></div>
+    {selectedId && (() => { const tank = tanks.find((item) => item.id === selectedId); return tank ? <div className="mapped-selection-detail"><strong>{tank.name}</strong><span>{tank.latitude.toFixed(5)}, {tank.longitude.toFixed(5)}</span><small>{tank.source}</small></div> : null; })()}
   </div>;
 }
 
@@ -115,17 +117,18 @@ export function NetworkCanvas({ input, result, selection, restoredIds, onSelect 
   const edges = useMemo<Edge[]>(() => input.channels.map((channel) => {
     const flow = result?.channelFlows.find((item) => item.channelId === channel.id);
     const blocked = channel.condition === "blocked";
+    const overflowing = channel.condition === "overflowing";
     const active = !blocked && Boolean(flow?.receivedL);
-    const color = blocked ? "#b91c1c" : active ? "#2563eb" : "#a8a29e";
+    const color = blocked ? "#b91c1c" : overflowing ? "#d97706" : active ? "#2563eb" : "#a8a29e";
     return {
       id: channel.id, source: channel.sourceTankId, target: channel.targetTankId,
       sourceHandle: channel.sourceTankId === "b" && channel.targetTankId === "c" ? "bottom" : "right",
       targetHandle: channel.sourceTankId === "b" && channel.targetTankId === "c" ? "top" : "left",
       type: "smoothstep", selectable: true, interactionWidth: 24,
-      label: blocked ? "× Blocked" : restoredIds.includes(channel.id) ? "Restored" : flow ? `${format(flow.receivedL)} L` : "No flow",
-      labelStyle: { fill: blocked ? "#b91c1c" : active ? "#2563eb" : "#57534e", fontSize: 14, fontWeight: 600 },
+      label: blocked ? "× Blocked" : overflowing ? "Overflowing" : restoredIds.includes(channel.id) ? "Restored" : flow ? `${format(flow.receivedL)} L` : "No flow",
+      labelStyle: { fill: blocked ? "#b91c1c" : overflowing ? "#b45309" : active ? "#2563eb" : "#57534e", fontSize: 14, fontWeight: 600 },
       labelBgStyle: { fill: "var(--surface)", fillOpacity: 1 }, labelBgPadding: [8, 5] as [number, number], labelBgBorderRadius: 5,
-      style: { stroke: color, strokeWidth: selection?.type === "channel" && selection.id === channel.id ? 4 : active ? 3 : 2, strokeDasharray: blocked ? "7 6" : undefined },
+      style: { stroke: color, strokeWidth: selection?.type === "channel" && selection.id === channel.id ? 4 : active ? 3 : 2, strokeDasharray: blocked ? "7 6" : overflowing ? "3 5" : undefined },
       markerEnd: { type: MarkerType.ArrowClosed, color, width: 20, height: 20 },
       animated: false,
     };
@@ -160,15 +163,15 @@ export function NetworkCanvas({ input, result, selection, restoredIds, onSelect 
                 <span className="mobile-tank-content"><span><strong>{tank.name}</strong><small>{village?.name ?? "Upstream source"}</small></span><span className="mobile-tank-meter"><i style={{ width: `${Math.min(100, tank.capacityL ? (balance?.finalStorageL ?? tank.initialStorageL) / tank.capacityL * 100 : 0)}%` }} /></span></span>
                 <span className="mobile-tank-volume">{format(balance?.finalStorageL ?? tank.initialStorageL)} <small>L</small></span>
               </button>
-              {index < input.tanks.length - 1 && outgoing && <button className={`mobile-channel ${outgoing.condition === "blocked" ? "blocked" : ""}`} onClick={() => onSelect({ type: "channel", id: outgoing.id })}>
-                <span className="mobile-channel-line" /><span>{outgoing.condition === "blocked" ? "Blocked" : flow ? `${format(flow.receivedL)} L transferred` : "Channel"}</span><span>↓</span>
+              {index < input.tanks.length - 1 && outgoing && <button className={`mobile-channel ${outgoing.condition === "blocked" ? "blocked" : outgoing.condition === "overflowing" ? "overflowing" : ""}`} onClick={() => onSelect({ type: "channel", id: outgoing.id })}>
+                <span className="mobile-channel-line" /><span>{outgoing.condition === "blocked" ? "Blocked" : outgoing.condition === "overflowing" ? "Overflowing" : flow ? `${format(flow.receivedL)} L transferred` : "Channel"}</span><span>↓</span>
               </button>}
             </div>;
           })}
         </div></>}
       </div>
       {networkView === "simulation" && <div className="canvas-footer">
-        <div className="legend"><span><i className="legend-line flow" /> Flowing</span><span><i className="legend-line blocked" /> Blocked</span><span><i className="legend-line idle" /> No transfer</span></div>
+        <div className="legend"><span><i className="legend-line flow" /> Flowing</span><span><i className="legend-line blocked" /> Blocked</span><span><i className="legend-line overflowing" /> Overflow</span><span><i className="legend-line idle" /> No transfer</span></div>
       </div>}
     </section>
   );

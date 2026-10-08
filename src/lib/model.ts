@@ -1,4 +1,4 @@
-export type ChannelCondition = "functional" | "degraded" | "blocked";
+export type ChannelCondition = "functional" | "degraded" | "blocked" | "overflowing";
 export type DemandKind = "household" | "irrigation";
 
 export interface Village { id: string; name: string; tankId: string }

@@ -19,7 +19,7 @@ function Metric({ label, value, suffix, tone, note }: { label: string; value: nu
 }
 
 function currentStatus(channel: WaterChannel) {
-  return channel.condition === "blocked" ? "Blocked" : channel.condition === "degraded" ? "Degraded" : "Functional";
+  return channel.condition === "blocked" ? "Blocked" : channel.condition === "overflowing" ? "Overflowing" : channel.condition === "degraded" ? "Degraded" : "Functional";
 }
 
 const policies: { value: SimulationInput["policy"]["mode"]; label: string; description: string }[] = [
@@ -198,7 +198,7 @@ export function Workspace() {
             <div className="inspector-title"><h3>{selectedChannel.sourceTankId.toUpperCase()} → {selectedChannel.targetTankId.toUpperCase()}</h3><span className={`condition-pill ${selectedChannel.condition}`}>{currentStatus(selectedChannel)}</span></div>
             <p>Overflow channel · {number(selectedChannel.capacityL)} L / event</p>
             <div className="segment-control" role="group" aria-label="Channel condition">
-              {(["functional", "degraded", "blocked"] as const).map((status) => <button key={status} className={selectedChannel.condition === status ? "selected" : ""} onClick={() => updateCondition(status)}>{status}</button>)}
+              {(["functional", "degraded", "blocked", "overflowing"] as const).map((status) => <button key={status} className={`${selectedChannel.condition === status ? "selected" : ""} ${status}`} onClick={() => updateCondition(status)}>{status}</button>)}
             </div>
             <dl><div><dt>Efficiency</dt><dd>{Math.round(selectedChannel.efficiency * 100)}%</dd></div><div><dt>Repair estimate</dt><dd>{selectedRepair ? money(selectedRepair.costINR) : "—"}</dd></div></dl>
           </div> : <div className="inspector-empty">Select a tank or channel on the canvas to inspect its properties.</div>}
