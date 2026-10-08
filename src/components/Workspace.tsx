@@ -97,7 +97,10 @@ export function Workspace() {
 
   function updateCondition(condition: WaterChannel["condition"]) {
     if (!selectedChannel) return;
-    edit({ ...scenario, channels: scenario.channels.map((item) => item.id === selectedChannel.id ? { ...item, condition } : item) });
+    const next = { ...scenario, channels: scenario.channels.map((item) => item.id === selectedChannel.id ? { ...item, condition } : item) };
+    const nextResult = simulate(next);
+    setScenario(next); setResult(nextResult); setLastRunInput(structuredClone(next)); setDirty(false);
+    setRecommendation(null); setComparison(null); setError("");
   }
 
   async function run() {
