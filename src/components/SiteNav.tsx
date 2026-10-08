@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ArrowUpRight, Menu, Waves, X } from "lucide-react";
-import { useState } from "react";
+import { ArrowUpRight, Menu, Moon, Sun, Waves, X } from "lucide-react";
+import { useEffect, useState } from "react";
 
 const links = [
   { href: "/", label: "Workspace" },
@@ -14,6 +14,22 @@ const links = [
 export function SiteNav() {
   const path = usePathname();
   const [open, setOpen] = useState(false);
+  const [dark, setDark] = useState(false);
+
+  useEffect(() => {
+    const stored = window.localStorage.getItem("jalsaarthi-theme");
+    const nextDark = stored === "dark";
+    setDark(nextDark);
+    document.documentElement.dataset.theme = nextDark ? "dark" : "light";
+  }, []);
+
+  function toggleTheme() {
+    const nextDark = !dark;
+    setDark(nextDark);
+    document.documentElement.dataset.theme = nextDark ? "dark" : "light";
+    window.localStorage.setItem("jalsaarthi-theme", nextDark ? "dark" : "light");
+  }
+
   return (
     <header className="site-nav-shell">
       <nav className="site-nav" aria-label="Main navigation">
@@ -30,9 +46,14 @@ export function SiteNav() {
             </Link>
           ))}
         </div>
-        <Link href="/#workspace" className="nav-cta" onClick={() => setOpen(false)}>
-          Open demo <ArrowUpRight size={16} />
-        </Link>
+        <div className="nav-actions">
+          <button className="theme-toggle" type="button" onClick={toggleTheme} aria-label={`Switch to ${dark ? "light" : "dark"} theme`} title={`Switch to ${dark ? "light" : "dark"} theme`}>
+            {dark ? <Sun size={17} /> : <Moon size={17} />}
+          </button>
+          <Link href="/#workspace" className="nav-cta" onClick={() => setOpen(false)}>
+            Open demo <ArrowUpRight size={16} />
+          </Link>
+        </div>
         <button className="nav-toggle" aria-label={open ? "Close navigation" : "Open navigation"}
           aria-expanded={open} onClick={() => setOpen(!open)}>
           {open ? <X size={20} /> : <Menu size={20} />}
