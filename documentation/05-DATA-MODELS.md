@@ -6,6 +6,8 @@
 
 All engine volumes, storage, capacity, transfer and demand are **integer litres per one event step**. Rainfall is non-negative millimetres; catchment is square metres; dimensionless coefficients/efficiencies lie in `[0,1]`; cost/budget are non-negative integer INR. `1 mm × 1 m² = 1 L`. IDs are stable ASCII strings and unique within their own collection. IDs and source/target references are case-sensitive. No real coordinates, rainfall observations, field costs, or measured efficiencies are included.
 
+Map records use a separate field-data contract. They require latitude/longitude and a source label; date, notes, and user-entered measurements are optional. They do not enter the simulation automatically. See [Field map and data provenance](13-FIELD-MAP-AND-DATA.md) for data quality and storage limits.
+
 ## Canonical TypeScript contracts
 
 ```ts

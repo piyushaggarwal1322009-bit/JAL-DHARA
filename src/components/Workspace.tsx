@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { ArrowDownToLine, ArrowRight, Check, ChevronDown, CircleAlert, Droplets, RotateCcw, ShieldCheck, SlidersHorizontal, Sparkles, Wrench } from "lucide-react";
 import { DEMO_INPUT, freshDemoInput } from "@/lib/fixture";
 import type { AIExtractedReport, OptimizationResult, SimulationInput, SimulationResult, WaterChannel } from "@/lib/model";
-import { applyRepairs, optimize } from "@/lib/optimization";
+import { applyRepairs } from "@/lib/optimization";
 import { simulate } from "@/lib/simulation";
 import { NetworkCanvas, type Selection } from "./NetworkCanvas";
 
@@ -54,19 +54,25 @@ export function Workspace() {
     edit({ ...scenario, channels: scenario.channels.map((item) => item.id === selectedChannel.id ? { ...item, condition } : item) });
   }
 
-  function run() {
+  async function run() {
     if (invalidRainfall) { setError("Enter rainfall from 0 to 500 mm."); return; }
     try {
-      const nextResult = simulate(scenario);
+      const response = await fetch("/api/simulate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(scenario) });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Could not run simulation.");
+      const nextResult = data.result as SimulationResult;
       setResult(nextResult); setLastRunInput(structuredClone(scenario)); setDirty(false);
       setRecommendation(null); setComparison(null); setError("");
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Could not run simulation."); }
   }
 
-  function findRepairs() {
+  async function findRepairs() {
     if (invalidRainfall || invalidBudget) { setError("Enter valid rainfall and a whole-rupee repair budget."); return; }
     try {
-      const next = optimize(scenario, Number(budgetText));
+      const response = await fetch("/api/optimize", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ input: scenario, budgetINR: Number(budgetText) }) });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Could not evaluate repairs.");
+      const next = data.recommendation as OptimizationResult;
       setResult(next.baseline); setLastRunInput(structuredClone(scenario)); setDirty(false);
       setRecommendation(next); setComparison(null); setError("");
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Could not evaluate repairs."); }

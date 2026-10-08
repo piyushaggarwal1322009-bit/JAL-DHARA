@@ -4,11 +4,11 @@
 
 ## Status and prerequisites
 
-This repository currently contains a **blueprint**, not an installable app. Deployment becomes possible after [the implementation plan](09-IMPLEMENTATION-PLAN.md) creates the Next.js project, `package.json`, committed lockfile, code, and tests. Do not connect this documentation-only tree to a host and expect a working app.
+The repository contains a Next.js application with the workspace, field map, and API routes. It can be deployed as a Node application on either Vercel or Render.
 
-Use one supported Node.js LTS version consistently in local development, Vercel, and Render; declare it in `package.json` `engines.node` and, if Render needs an exact version, its `NODE_VERSION` setting. Expected npm scripts: `dev: next dev`, `build: next build`, `start: next start`, `test: vitest run`. Local commands: `npm ci`, `npm run test`, `npm run build`, `npm run dev`. The optional route needs the **Node runtime**; do not set `output: 'export'` because a static export cannot host `/api/diagnose`.
+Use one supported Node.js version consistently in local development, Vercel, and Render; the project declares `engines.node`. Scripts: `dev`, `build`, `start`, `test`, and `typecheck`. Local commands: `npm ci`, `npm run typecheck`, `npm test`, `npm run build`, `npm run dev`. API routes use the **Node runtime**; do not set `output: 'export'` because a static export cannot host `/api/diagnose`, `/api/simulate`, or `/api/optimize`.
 
-The core app requires **no environment variable**. Optional diagnosis uses `GROQ_API_KEY` and `GROQ_MODEL` (default `openai/gpt-oss-20b`). Put local values in `.env.local`, which must be gitignored. Never use a `NEXT_PUBLIC_` prefix for the key. Verify current model availability, strict JSON-schema support, and free-plan quota from [Groq's documentation](https://console.groq.com/docs/models) and [rate limits](https://console.groq.com/docs/rate-limits); quota and pricing may change.
+The core app requires **no environment variable**. Optional diagnosis uses `GROQ_API_KEY` and `GROQ_MODEL` (default `openai/gpt-oss-20b`). Put local values in `.env.local`, which must be gitignored. Never use a `NEXT_PUBLIC_` prefix for the key. Map field records are saved in each browser and do not sync to the host. Verify current model availability, strict JSON-schema support, and free-plan quota from [Groq's documentation](https://console.groq.com/docs/models) and [rate limits](https://console.groq.com/docs/rate-limits); quota and pricing may change.
 
 ## Vercel path
 

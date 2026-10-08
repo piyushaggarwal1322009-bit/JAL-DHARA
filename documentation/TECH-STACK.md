@@ -6,20 +6,21 @@
 
 | Layer | Choice | Why / boundary |
 | --- | --- | --- |
-| Application | Next.js App Router | One codebase for three routes and the optional diagnosis endpoint. |
+| Application | Next.js App Router | One codebase for site pages and Node API routes. |
 | Language | TypeScript, strict mode | One shared domain contract from fixture to UI and pure engines. |
 | UI | React state/useReducer, Tailwind CSS | Compact workspace without a global-state package. |
 | Components/icons | Selective shadcn/ui and Lucide React | Accessible controls and consistent small icons; avoid a large component framework. |
 | Network canvas | `@xyflow/react` | Selectable directed tank/channel graph; domain state stays outside canvas internals. |
 | Motion | Framer Motion, optional | Restrained state transitions; honor reduced motion. |
 | Validation | Zod | Parse fixture, form snapshots, API input, and provider output at boundaries. |
-| Engine | Pure TypeScript functions | Deterministic water balance and exhaustive ≤8-repair subset search, run in browser. |
-| Data | One typed JSON fixture | Reproducible demo; no database or live feed. |
+| Engine | Pure TypeScript functions called by Node API routes | Deterministic water balance and exhaustive ≤8-repair subset search. |
+| Map | Leaflet + React Leaflet + OpenStreetMap | User-entered, source-attributed field records; JSON/CSV import/export and local browser storage. |
+| Data | Typed illustrative simulation fixture and user-entered map records | No tank-level real dataset, database, or live feed is configured. |
 | Optional AI | Groq API via `groq-sdk` | One structured text-to-form proposal, server-side only; manual fallback is mandatory. |
 | Tests | Vitest | Golden arithmetic, invariants, optimizer ranking, and validation. |
 | Hosting | Vercel **or** Render | Deploy the same Next.js application; only one host is needed for the demo. |
 
-No Python service, Express server, authentication provider, queue, vector database, or AI orchestration framework is part of the MVP. The Next.js route handler in [Backend](BACKEND.md) is the only server-side API surface. If optional AI is omitted, the primary simulation needs no remote service.
+No Python service, Express server, authentication provider, queue, vector database, or AI orchestration framework is part of the MVP. Next.js provides simulation, optimizer, and optional Groq routes. Map records remain local; shared storage and accounts are future work.
 
 ## Package boundary
 

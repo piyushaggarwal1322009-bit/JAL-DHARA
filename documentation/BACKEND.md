@@ -2,20 +2,23 @@
 
 [Architecture](03-SYSTEM-ARCHITECTURE.md) · [AI integration](08-AI-INTEGRATION.md) · [Data models](05-DATA-MODELS.md) · [Deployment](11-DEPLOYMENT.md)
 
-## Why there is no separate backend service
+## Backend boundary
 
-The MVP does **not** need a standalone backend repository or server. The browser runs the deterministic simulation, optimizer, and report generation from validated local data. The only server-side concern is keeping an optional Groq API key private while extracting a proposed defect report. A Next.js App Router route handler supplies that thin backend within the same application. Vercel runs it as a function; Render runs the same app as a Node web service. No database or persistent user session is required.
+The backend is part of the Next.js application; it does not need a separate service. Simulation and optimization run through server routes using the same validated deterministic library as the browser. Groq remains an optional server-side report extraction feature. Map field records are saved in browser storage and exported as JSON/CSV. This release has no database, sign-in, or cross-device sync; add authenticated database persistence before offering shared workspaces or storing user data centrally.
 
 ## Route inventory
 
 | Route | Runtime | Responsibility |
 | --- | --- | --- |
-| `GET /` | Browser-facing Next.js page | Workspace and local pure computations. |
+| `GET /` | Browser-facing Next.js page | Scenario editor and results display. |
 | `GET /parampara` | Next.js page | Eri explanation, sources, assumptions. |
 | `GET /about` | Next.js page | Methodology and limits. |
 | `POST /api/diagnose` | Next.js Node route, optional | Groq text extraction into an unconfirmed, validated proposal. |
+| `GET /map` | Next.js page | Map-based, source-attributed field data entry. |
+| `POST /api/simulate` | Next.js Node route | Validate a scenario and compute its result on the server; request capped at 64 KB. |
+| `POST /api/optimize` | Next.js Node route | Validate a scenario and INR budget and compute repair options; request capped at 64 KB. |
 
-There is no `/api/simulate` or `/api/optimize`: both are pure local functions. Do not make a public endpoint that returns fabricated results or accepts arbitrary provider-produced volumes.
+Browser and server use the same deterministic simulation/optimization library. The APIs do not use Groq to produce numeric results. Do not make a public endpoint that returns fabricated results or accepts arbitrary provider-produced volumes.
 
 ## `POST /api/diagnose` contract
 
@@ -36,6 +39,10 @@ Request JSON: `{ "text": "The B to C channel is blocked; budget ₹12,000." }`. 
 ```
 
 The strict JSON schema must require all fields of `AIExtractedReport` and set `additionalProperties: false`; `channelId` and `budgetINR` can be `null`. Zod validation remains mandatory because a well-shaped response can still contain unknown IDs or implausible values. The browser presents an editable confirmation sheet; **only user confirmation** maps the proposal into local form state. The route never stores reports or sends messages elsewhere.
+
+## Scenario and map persistence
+
+Map records currently live in `localStorage` on the user's device. JSON import/export and CSV export provide backup and transfer. This does not provide server backup, access control, collaboration, or cross-device sync. Before adding shared persistence, select a database and authentication provider, enforce per-user row access, and preserve provenance fields. Never put a database service-role key in browser code.
 
 ## Security, observability, and portability
 

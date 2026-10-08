@@ -4,7 +4,7 @@ import { SiteNav } from "@/components/SiteNav";
 
 export const metadata: Metadata = {
   title: "JalSaarthi X — Water networks, understood",
-  description: "An illustrative, Eri-inspired water network workspace for simulating broken channels and comparing repair strategies.",
+  description: "An Eri-inspired water network workspace with a source-attributed field map and transparent scenario analysis.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

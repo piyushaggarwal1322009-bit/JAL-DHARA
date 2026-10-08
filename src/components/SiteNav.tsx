@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 
 const links = [
   { href: "/", label: "Workspace" },
+  { href: "/map", label: "Field map" },
   { href: "/parampara", label: "Parampara" },
   { href: "/about", label: "About" },
 ];
@@ -15,12 +16,14 @@ export function SiteNav() {
   const path = usePathname();
   const [open, setOpen] = useState(false);
   const [dark, setDark] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     const stored = window.localStorage.getItem("jalsaarthi-theme");
     const nextDark = stored === "dark";
     setDark(nextDark);
     document.documentElement.dataset.theme = nextDark ? "dark" : "light";
+    setMounted(true);
   }, []);
 
   function toggleTheme() {
@@ -40,8 +43,8 @@ export function SiteNav() {
         <div className={`nav-links ${open ? "is-open" : ""}`}>
           {links.map((link) => (
             <Link key={link.href} href={link.href} onClick={() => setOpen(false)}
-              className={path === link.href ? "nav-link active" : "nav-link"}
-              aria-current={path === link.href ? "page" : undefined}>
+              className={mounted && path === link.href ? "nav-link active" : "nav-link"}
+              aria-current={mounted && path === link.href ? "page" : undefined}>
               {link.label}
             </Link>
           ))}
