@@ -228,7 +228,7 @@ export function Workspace() {
           <button className="reset-button" onClick={reset}><RotateCcw size={15} /> Reset scenario</button>
           <div className="section-rule" />
           <details className="diagnosis-details"><summary><span><Sparkles size={15} /> Describe a fault</span><ChevronDown size={15} /></summary>
-            <p>Optional Groq extraction creates an editable proposal. It never calculates water outcomes.</p>
+            <p>This creates an editable proposal. It never calculates water outcomes.</p>
             <label htmlFor="report-text">Your observation</label><textarea id="report-text" maxLength={1000} rows={3} placeholder="The B to C channel is blocked..." value={reportText} onChange={(event) => setReportText(event.target.value)} />
             <button className="button-outline" onClick={diagnose} disabled={!reportText.trim() || diagnosisBusy}>{diagnosisBusy ? "Reading report…" : "Extract details"}</button>
             {diagnosisMessage && <small className="diagnosis-message" role="status">{diagnosisMessage}</small>}
