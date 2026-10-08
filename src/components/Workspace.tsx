@@ -1,11 +1,13 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowDownToLine, ArrowRight, Check, ChevronDown, CircleAlert, Droplets, RotateCcw, ShieldCheck, SlidersHorizontal, Sparkles, Wrench } from "lucide-react";
 import { DEMO_INPUT, freshDemoInput } from "@/lib/fixture";
 import type { AIExtractedReport, OptimizationResult, SimulationInput, SimulationResult, WaterChannel } from "@/lib/model";
 import { applyRepairs } from "@/lib/optimization";
 import { simulate } from "@/lib/simulation";
+import { createMappedScenario } from "@/lib/mapped-scenario";
+import { isSiteFeature, SITE_DATA_KEY, type SiteFeature } from "@/lib/site-data";
 import { NetworkCanvas, type Selection } from "./NetworkCanvas";
 
 const number = (value: number) => new Intl.NumberFormat("en-IN").format(value);
@@ -47,6 +49,8 @@ function PolicyPicker({ value, onChange }: { value: SimulationInput["policy"]["m
 
 export function Workspace() {
   const [scenario, setScenario] = useState<SimulationInput>(freshDemoInput);
+  const [mappedFeatures, setMappedFeatures] = useState<SiteFeature[]>([]);
+  const [scenarioReady, setScenarioReady] = useState(false);
   const [lastRunInput, setLastRunInput] = useState<SimulationInput>(freshDemoInput);
   const [result, setResult] = useState<SimulationResult>(initialResult);
   const [dirty, setDirty] = useState(false);
@@ -60,6 +64,22 @@ export function Workspace() {
   const [proposal, setProposal] = useState<AIExtractedReport | null>(null);
   const [diagnosisBusy, setDiagnosisBusy] = useState(false);
   const [diagnosisMessage, setDiagnosisMessage] = useState("");
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(SITE_DATA_KEY);
+      const parsed: unknown = raw ? JSON.parse(raw) : [];
+      const features = Array.isArray(parsed) ? parsed.filter(isSiteFeature) : [];
+      const mappedTanks = features.filter((feature) => feature.kind === "tank");
+      if (mappedTanks.length === 0) return;
+      const next = createMappedScenario(features);
+      setMappedFeatures(features);
+      setScenario(next); setLastRunInput(structuredClone(next)); setResult(simulate(next));
+      setSelection(next.channels.length ? { type: "channel", id: next.channels[0].id } : { type: "tank", id: next.tanks[0].id });
+      setRainfallText(String(next.rainfall.rainfallMm)); setDirty(false);
+    } catch { setMappedFeatures([]); }
+    finally { setScenarioReady(true); }
+  }, []);
 
   const selectedTank = selection?.type === "tank" ? scenario.tanks.find((item) => item.id === selection.id) : undefined;
   const selectedChannel = selection?.type === "channel" ? scenario.channels.find((item) => item.id === selection.id) : undefined;
@@ -112,9 +132,9 @@ export function Workspace() {
   }
 
   function reset() {
-    const fresh = freshDemoInput();
-    setScenario(fresh); setLastRunInput(freshDemoInput()); setResult(simulate(fresh));
-    setRainfallText("40"); setBudgetText("12000"); setSelection({ type: "channel", id: "b-c" });
+    const fresh = mappedFeatures.some((feature) => feature.kind === "tank") ? createMappedScenario(mappedFeatures) : freshDemoInput();
+    setScenario(fresh); setLastRunInput(structuredClone(fresh)); setResult(simulate(fresh));
+    setRainfallText(String(fresh.rainfall.rainfallMm)); setBudgetText("12000"); setSelection(fresh.channels.length ? { type: "channel", id: fresh.channels[0].id } : { type: "tank", id: fresh.tanks[0].id });
     setDirty(false); setRecommendation(null); setComparison(null); setError(""); setProposal(null); setDiagnosisMessage("");
   }
 
@@ -195,7 +215,7 @@ export function Workspace() {
             <h3>{selectedTank.name}</h3><p>{scenario.villages.find((item) => item.tankId === selectedTank.id)?.name ?? "Upstream source"}</p>
             <dl><div><dt>Capacity</dt><dd>{number(selectedTank.capacityL)} L</dd></div><div><dt>Initial storage</dt><dd>{number(selectedTank.initialStorageL)} L</dd></div><div><dt>Catchment</dt><dd>{number(selectedTank.catchmentAreaM2)} m²</dd></div><div><dt>Runoff coefficient</dt><dd>{selectedTank.runoffCoefficient}</dd></div></dl>
           </div> : selectedChannel ? <div className="inspector">
-            <div className="inspector-title"><h3>{selectedChannel.sourceTankId.toUpperCase()} → {selectedChannel.targetTankId.toUpperCase()}</h3><span className={`condition-pill ${selectedChannel.condition}`}>{currentStatus(selectedChannel)}</span></div>
+            <div className="inspector-title"><h3>{scenario.tanks.find((item) => item.id === selectedChannel.sourceTankId)?.name ?? selectedChannel.sourceTankId} → {scenario.tanks.find((item) => item.id === selectedChannel.targetTankId)?.name ?? selectedChannel.targetTankId}</h3><span className={`condition-pill ${selectedChannel.condition}`}>{currentStatus(selectedChannel)}</span></div>
             <p>Overflow channel · {number(selectedChannel.capacityL)} L / event</p>
             <div className="segment-control" role="group" aria-label="Channel condition">
               {(["functional", "degraded", "blocked", "overflowing"] as const).map((status) => <button key={status} className={`${selectedChannel.condition === status ? "selected" : ""} ${status}`} onClick={() => updateCondition(status)}>{status}</button>)}
@@ -216,14 +236,14 @@ export function Workspace() {
           </details>
         </aside>
 
-        <NetworkCanvas input={scenario} result={dirty ? null : result} selection={selection} restoredIds={restoredIds} onSelect={setSelection} />
+        {scenarioReady ? <NetworkCanvas input={scenario} result={dirty ? null : result} selection={selection} restoredIds={restoredIds} mappedTanks={mappedFeatures.filter((feature) => feature.kind === "tank")} onSelect={setSelection} /> : <section className="canvas-panel network-loading" aria-label="Loading water network">Loading mapped locations…</section>}
 
         <aside className="side-panel results-panel">
           <div className="panel-heading"><h2>Results</h2><span className={`run-indicator ${dirty ? "stale" : ""}`}>{dirty ? "Needs update" : "Current"}</span></div>
           <p className="panel-subtitle">Water delivered in this event</p>
           {dirty && <div className="stale-notice" role="status">Inputs changed. Run the simulation to update these results.</div>}
           <div className="featured-metric"><span>Water delivered</span><strong key={result.deliveredL}>{number(result.deliveredL)}<small> L</small></strong><p>of {number(scenario.demands.reduce((total, item) => total + item.amountL, 0))} L requested</p><div className="progress-track"><div style={{ width: `${Math.min(100, result.deliveredL / Math.max(1, scenario.demands.reduce((total, item) => total + item.amountL, 0)) * 100)}%` }} /></div></div>
-          <div className="metric-grid"><Metric label="Unmet demand" value={result.unmetDemandL} tone={result.unmetDemandL ? "metric-warning" : ""} /><Metric label="Blocked channels" value={scenario.channels.filter((channel) => channel.condition === "blocked").length} suffix=" channels" tone={scenario.channels.some((channel) => channel.condition === "blocked") ? "metric-warning" : ""} /><Metric label="Spill" value={result.externalSpillL} /><Metric label="Channel loss" value={result.channelLossL} /></div>
+          <div className="metric-grid"><Metric label="Unmet demand" value={result.unmetDemandL} tone={result.unmetDemandL ? "metric-warning" : ""} /><Metric label="Blocked / overflow" value={scenario.channels.filter((channel) => channel.condition === "blocked" || channel.condition === "overflowing").length} suffix=" channels" tone={scenario.channels.some((channel) => channel.condition === "blocked" || channel.condition === "overflowing") ? "metric-warning" : ""} /><Metric label="Spill" value={result.externalSpillL} /><Metric label="Channel loss" value={result.channelLossL} /></div>
           <div className="balance-line"><ShieldCheck size={15} /><span>Stored: {number(result.finalStorageL)} L · Balance check</span><strong>{result.balanceResidualL} L</strong></div>
           <div className="section-rule" />
           <div className="panel-heading"><h3 className="form-section-title">Village delivery</h3><span className="subtle-count">{scenario.villages.length} villages</span></div>
@@ -244,7 +264,9 @@ export function Workspace() {
           <button className="export-button" onClick={exportReport} disabled={dirty}><ArrowDownToLine size={16} /> Download scenario report <ArrowRight size={15} /></button>
         </aside>
       </div>
-      <div className="workspace-footnote"><span>MODEL NOTE</span> This is a transparent, one-step educational simulation with invented inputs. It is not a field survey, hydraulic design, or verified water-saving estimate.</div>
+      <div className="workspace-footnote"><span>MODEL NOTE</span> {mappedFeatures.some((feature) => feature.kind === "tank")
+        ? "Tank names and coordinates come from your map. Supplied measurements are used where available; missing capacity, storage, demand and flow values use illustrative defaults. Link distances are straight-line estimates, not surveyed routes."
+        : "This is a transparent, one-step educational simulation with invented inputs. It is not a field survey, hydraulic design, or verified water-saving estimate."}</div>
     </section>
   );
 }
