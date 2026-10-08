@@ -27,7 +27,7 @@ Optional `render.yaml` blueprint once code exists:
 ```yaml
 services:
   - type: web
-    name: jalsaarthi-x
+    name: jaldhara
     runtime: node
     plan: free
     buildCommand: npm ci && npm run build

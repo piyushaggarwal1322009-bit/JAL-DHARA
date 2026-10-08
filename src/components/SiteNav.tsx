@@ -47,7 +47,7 @@ export function SiteNav() {
       <nav className="site-nav" aria-label="Main navigation">
         <Link className="brand" href="/" onClick={() => setOpen(false)}>
           <span className="brand-mark"><Waves size={19} strokeWidth={2.1} /></span>
-          <span>JalSaarthi <strong>X</strong></span>
+          <span>Jal<strong>Dhara</strong></span>
         </Link>
         <div className={`nav-links ${open ? "is-open" : ""}`}>
           {links.map((link) => (

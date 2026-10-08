@@ -4,7 +4,7 @@
 
 ## Thirty-second pitch
 
-“Tamil Nadu's traditional Eri tanks show how connected storage and channels can help share water across a landscape. When a channel is blocked, a local repair decision can affect villages farther downstream. JalSaarthi X turns that idea into a small executable model: break a link, calculate the water balance, test affordable repairs, and see the result for each community. The numbers are reproducible outputs from an illustrative scenario, not AI guesses or field measurements.”
+“Tamil Nadu's traditional Eri tanks show how connected storage and channels can help share water across a landscape. When a channel is blocked, a local repair decision can affect villages farther downstream. JalDhara turns that idea into a small executable model: break a link, calculate the water balance, test affordable repairs, and see the result for each community. The numbers are reproducible outputs from an illustrative scenario, not AI guesses or field measurements.”
 
 ## Sixty-second interactive demo
 

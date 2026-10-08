@@ -97,7 +97,7 @@ export function Workspace() {
 
   function exportReport() {
     const report = {
-      title: "JalSaarthi X — illustrative scenario report",
+      title: "JalDhara — illustrative scenario report",
       disclaimer: "Invented demonstration values. Not a field survey or engineering approval.",
       assumptions: ["One rainfall event and instantaneous routing step", "Demand served before storage and onward surplus", "Integer litres", "All fixture names, quantities and repair costs are illustrative"],
       scenario: lastRunInput, result,
@@ -108,7 +108,7 @@ export function Workspace() {
     };
     const blob = new Blob([JSON.stringify(report, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
-    const link = document.createElement("a"); link.href = url; link.download = "jalsaarthi-x-scenario.json"; link.click();
+    const link = document.createElement("a"); link.href = url; link.download = "jaldhara-scenario.json"; link.click();
     URL.revokeObjectURL(url);
   }
 

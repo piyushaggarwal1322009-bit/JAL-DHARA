@@ -98,7 +98,7 @@ export function SiteMap() {
 
   function exportData() {
     const blob = new Blob([JSON.stringify({ schemaVersion: 1, features }, null, 2)], { type: "application/json" });
-    const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = "jalsaarthi-site-data.json"; link.click(); URL.revokeObjectURL(link.href);
+    const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = "jaldhara-site-data.json"; link.click(); URL.revokeObjectURL(link.href);
   }
 
   async function importData(file?: File) {
@@ -110,7 +110,7 @@ export function SiteMap() {
       const imported = (parsed as { features: unknown[] }).features;
       if (imported.length > 1000 || !imported.every(isSiteFeature)) throw new Error();
       setFeatures(imported); setSelectedId(null); setMessage(`${imported.length} mapped records imported.`); setError("");
-    } catch { setError("This file is not a valid JalSaarthi site data export."); }
+    } catch { setError("This file is not a valid JalDhara site data export."); }
   }
 
   return <main className="site-map-page">
@@ -158,6 +158,6 @@ export function SiteMap() {
       </aside>
     </div>
     <div className="site-map-footnote">Map tiles © OpenStreetMap contributors. Field entries are user supplied and are not checked against official records.</div>
-    <section className="site-map-data-tools"><h2>Download as spreadsheet</h2><p>Use CSV for reviews or keep JSON to re-import the records into JalSaarthi.</p><button className="button-outline" onClick={() => { const blob = new Blob([featureCsv(features)], { type: "text/csv;charset=utf-8" }); const url = URL.createObjectURL(blob); const link = document.createElement("a"); link.href = url; link.download = "jalsaarthi-site-data.csv"; link.click(); URL.revokeObjectURL(url); }}>Export CSV</button></section>
+    <section className="site-map-data-tools"><h2>Download as spreadsheet</h2><p>Use CSV for reviews or keep JSON to re-import the records into JalDhara.</p><button className="button-outline" onClick={() => { const blob = new Blob([featureCsv(features)], { type: "text/csv;charset=utf-8" }); const url = URL.createObjectURL(blob); const link = document.createElement("a"); link.href = url; link.download = "jaldhara-site-data.csv"; link.click(); URL.revokeObjectURL(url); }}>Export CSV</button></section>
   </main>;
 }
