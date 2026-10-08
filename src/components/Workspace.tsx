@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowDownToLine, ArrowRight, Check, ChevronDown, CircleAlert, Droplets, RotateCcw, ShieldCheck, SlidersHorizontal, Sparkles, Wrench } from "lucide-react";
+import { ArrowDownToLine, ArrowRight, Check, ChevronDown, CircleAlert, Droplets, MessageCircleQuestion, RotateCcw, Send, ShieldCheck, SlidersHorizontal, Sparkles, Wrench } from "lucide-react";
 import { DEMO_INPUT, freshDemoInput } from "@/lib/fixture";
 import type { AIExtractedReport, OptimizationResult, SimulationInput, SimulationResult, WaterChannel } from "@/lib/model";
 import { applyRepairs } from "@/lib/optimization";
@@ -64,6 +64,9 @@ export function Workspace() {
   const [proposal, setProposal] = useState<AIExtractedReport | null>(null);
   const [diagnosisBusy, setDiagnosisBusy] = useState(false);
   const [diagnosisMessage, setDiagnosisMessage] = useState("");
+  const [questionText, setQuestionText] = useState("");
+  const [answerText, setAnswerText] = useState("");
+  const [answerBusy, setAnswerBusy] = useState(false);
 
   useEffect(() => {
     try {
@@ -167,6 +170,28 @@ export function Workspace() {
     finally { setDiagnosisBusy(false); }
   }
 
+  async function askWaterQuestion(question = questionText) {
+    const trimmed = question.trim();
+    if (!trimmed || answerBusy) return;
+    setQuestionText(trimmed); setAnswerText(""); setAnswerBusy(true);
+    const tankNames = new Map(scenario.tanks.map((tank) => [tank.id, tank.name]));
+    const context = JSON.stringify({
+      rainfallMm: scenario.rainfall.rainfallMm,
+      sharingRule: scenario.policy.mode,
+      tanks: scenario.tanks.map((tank) => ({ name: tank.name, capacityL: tank.capacityL, initialStorageL: tank.initialStorageL })),
+      channels: scenario.channels.map((channel) => ({ from: tankNames.get(channel.sourceTankId), to: tankNames.get(channel.targetTankId), condition: channel.condition, capacityL: channel.capacityL, efficiencyPercent: Math.round(channel.efficiency * 100) })),
+      resultsCurrent: !dirty,
+      results: dirty ? null : { deliveredL: result.deliveredL, unmetDemandL: result.unmetDemandL, spillL: result.externalSpillL, channelLossL: result.channelLossL },
+    });
+    try {
+      const response = await fetch("/api/ask", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question: trimmed, context }) });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Could not get an answer.");
+      setAnswerText(data.answer);
+    } catch (cause) { setAnswerText(cause instanceof Error ? cause.message : "Could not get an answer. Please try again."); }
+    finally { setAnswerBusy(false); }
+  }
+
   function confirmProposal() {
     if (!proposal) return;
     let next = scenario;
@@ -233,6 +258,18 @@ export function Workspace() {
             <button className="button-outline" onClick={diagnose} disabled={!reportText.trim() || diagnosisBusy}>{diagnosisBusy ? "Reading report…" : "Extract details"}</button>
             {diagnosisMessage && <small className="diagnosis-message" role="status">{diagnosisMessage}</small>}
             {proposal && <div className="proposal"><span className="eyebrow">REVIEW BEFORE APPLYING</span><strong>Channel {proposal.channelId?.toUpperCase() ?? "unknown"} · {proposal.defect}</strong><small>Budget {proposal.budgetINR === null ? "not specified" : money(proposal.budgetINR)}</small><small>Villages: {proposal.villageIds.length ? proposal.villageIds.join(", ") : "not specified"}</small><div><button onClick={confirmProposal}>Use proposal</button><button onClick={() => setProposal(null)}>Dismiss</button></div></div>}
+          </details>
+          <details className="qa-details"><summary><span><MessageCircleQuestion size={16} /> Ask a water question</span><ChevronDown size={15} /></summary>
+            <p>Ask about this network, the simulation, or water distribution.</p>
+            <form onSubmit={(event) => { event.preventDefault(); void askWaterQuestion(); }}>
+              <textarea aria-label="Your water question" maxLength={1000} rows={2} placeholder="Why is water spilling from this network?" value={questionText} onChange={(event) => setQuestionText(event.target.value)} disabled={answerBusy} />
+              <button className="button-primary" type="submit" disabled={!questionText.trim() || answerBusy}>{answerBusy ? "Thinking…" : <><Send size={15} /> Ask question</>}</button>
+            </form>
+            <div className="qa-prompts" aria-label="Suggested questions">
+              {["How does a blocked channel affect delivery?", "What does proportional sharing mean?", "Why is water spilling?"] .map((prompt) => <button key={prompt} type="button" onClick={() => void askWaterQuestion(prompt)} disabled={answerBusy}>{prompt}</button>)}
+            </div>
+            {answerBusy && <p className="qa-status" role="status">Preparing an answer…</p>}
+            {answerText && <div className="qa-answer" role="status"><strong>Answer</strong><p>{answerText}</p></div>}
           </details>
         </aside>
 

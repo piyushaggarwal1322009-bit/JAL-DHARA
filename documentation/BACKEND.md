@@ -4,7 +4,7 @@
 
 ## Backend boundary
 
-The backend is part of the Next.js application; it does not need a separate service. Simulation and optimization run through server routes using the same validated deterministic library as the browser. Groq remains an optional server-side report extraction feature. Map field records are saved in browser storage and exported as JSON/CSV. This release has no database, sign-in, or cross-device sync; add authenticated database persistence before offering shared workspaces or storing user data centrally.
+The backend is part of the Next.js application; it does not need a separate service. Simulation and optimization run through server routes using the same validated deterministic library as the browser. Groq provides optional server-side report extraction and water-network Q&A. Map field records are saved in browser storage and exported as JSON/CSV. This release has no database, sign-in, or cross-device sync; add authenticated database persistence before offering shared workspaces or storing user data centrally.
 
 ## Route inventory
 
@@ -14,11 +14,16 @@ The backend is part of the Next.js application; it does not need a separate serv
 | `GET /parampara` | Next.js page | Eri explanation, sources, assumptions. |
 | `GET /about` | Next.js page | Methodology and limits. |
 | `POST /api/diagnose` | Next.js Node route, optional | Groq text extraction into an unconfirmed, validated proposal. |
+| `POST /api/ask` | Next.js Node route, optional | Plain-language answers about water systems and a bounded snapshot of the current scenario. It does not compute simulation results. |
 | `GET /map` | Next.js page | Map-based, source-attributed field data entry. |
 | `GET /network` | Next.js page | Mapped tank names, pairwise distances, and a straight-line length × user-rate cost estimate. |
 | `GET /network` | Next.js page | Mapped tank names, geodesic distances, and transparent length × rate estimate. |
 | `POST /api/simulate` | Next.js Node route | Validate a scenario and compute its result on the server; request capped at 64 KB. |
 | `POST /api/optimize` | Next.js Node route | Validate a scenario and INR budget and compute repair options; request capped at 64 KB. |
+
+## `POST /api/ask` contract
+
+Request JSON: `{ "question": "Why is water spilling?", "context": "...optional current scenario summary..." }`. Accept UTF-8 JSON only; question length is 1–1,000 characters, context is capped at 8 KB, and total request is capped at 12 KB. Returns `{ "answer": string }`. The server treats question and context as untrusted data, bounds output, throttles requests best-effort per instance, and never uses the model to calculate water outcomes. `GROQ_API_KEY` is required to enable answers; without it the UI reports that the feature is unavailable while the deterministic app remains usable.
 
 Browser and server use the same deterministic simulation/optimization library. The APIs do not use Groq to produce numeric results. Do not make a public endpoint that returns fabricated results or accepts arbitrary provider-produced volumes.
 
