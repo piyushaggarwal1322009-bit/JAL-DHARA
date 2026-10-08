@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import { ArrowDownToLine, Crosshair, MapPin, Plus, Trash2, Upload } from "lucide-react";
@@ -33,6 +35,7 @@ function featureCsv(features: SiteFeature[]) {
 }
 
 export function SiteMap() {
+  const router = useRouter();
   const [features, setFeatures] = useState<SiteFeature[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [placing, setPlacing] = useState(false);
@@ -84,9 +87,13 @@ export function SiteMap() {
       id: crypto.randomUUID(), kind, name: name.trim(), latitude: pending.lat, longitude: pending.lng,
       source: source.trim(), observedOn, notes: notes.trim(), measurements,
     };
-    setFeatures((current) => [...current, item]); setSelectedId(item.id); setPending(null);
+    const nextFeatures = [...features, item];
+    try { localStorage.setItem(SITE_DATA_KEY, JSON.stringify(nextFeatures)); }
+    catch { setError("Browser storage is full. Export existing map data before adding another location."); return; }
+    setFeatures(nextFeatures); setSelectedId(item.id); setPending(null);
     setName(""); setSource(""); setObservedOn(""); setNotes(""); setMeasurementsText("{}"); setError("");
     setMessage("Location saved in this browser with its source details.");
+    if (kind === "tank") router.push("/network");
   }
 
   function exportData() {
@@ -109,7 +116,7 @@ export function SiteMap() {
   return <main className="site-map-page">
     <header className="site-map-heading">
       <div><p className="site-map-kicker">FIELD DATA</p><h1>Map a water system</h1><p className="site-map-lede">Add surveyed locations and record where each measurement came from. Map points are stored in this browser.</p></div>
-      <div className="site-map-actions"><label className="button-outline map-import"><Upload size={16} /> Import JSON<input type="file" accept="application/json,.json" onChange={(event) => void importData(event.target.files?.[0])} /></label><button className="button-outline" onClick={exportData}><ArrowDownToLine size={16} /> Export data</button></div>
+      <div className="site-map-actions">{features.some((feature) => feature.kind === "tank") && <Link href="/network" className="button-primary">View water network</Link>}<label className="button-outline map-import"><Upload size={16} /> Import JSON<input type="file" accept="application/json,.json" onChange={(event) => void importData(event.target.files?.[0])} /></label><button className="button-outline" onClick={exportData}><ArrowDownToLine size={16} /> Export data</button></div>
     </header>
     <div className="map-notice"><MapPin size={16} /><span>Map opens near the Mailam study area for orientation. No tank coordinates are prefilled; place only locations you have verified.</span></div>
     <div className="map-research-card"><div><strong>Mailam tank cascade</strong><span>14-tank empirical case · observations reported for 2004–2024</span><small>Published watershed findings are useful context, but do not include verified per-tank operating inputs for this simulator.</small></div><a href="https://doi.org/10.3389/frwa.2025.1597293" target="_blank" rel="noreferrer">Read the study ↗</a></div>

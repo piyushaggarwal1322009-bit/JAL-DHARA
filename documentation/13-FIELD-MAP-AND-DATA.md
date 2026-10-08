@@ -12,6 +12,8 @@ Reference: [Socio-hydrology and sustainable tank management: empirical case from
 
 The `/map` page lets a user click the map to record a tank/water body, village, channel, or observation. Each record stores a name, latitude, longitude, source label, observation date, notes, and free-form key/value measurements. It supports JSON import/export and CSV export.
 
+After saving a tank location, the app opens `/network`. The network view uses the saved tank names, shows each pair's straight-line geodesic distance, and draws the minimum set of proposed links connecting all mapped tanks. It multiplies that total length by an optional user-entered INR/metre rate to calculate a preliminary cost. The rate should come from a current local schedule or contractor quote. The result excludes route deviations, elevation, earthwork, materials, access, taxes, and approvals; the proposed links are not surveyed channels.
+
 The user must supply and verify coordinates and measurements. The map does not geocode names, query a government inventory, infer channel paths, or estimate measured hydrology. Map tiles are provided by OpenStreetMap with visible attribution. Review the [tile usage policy](https://operations.osmfoundation.org/policies/tiles/) and configure an appropriate provider before significant production traffic.
 
 Map records are stored in browser `localStorage`. They remain on that browser and are not sent to the application server. JSON and CSV export are backup and transfer paths. This is an individual-use MVP, not a multi-user database.

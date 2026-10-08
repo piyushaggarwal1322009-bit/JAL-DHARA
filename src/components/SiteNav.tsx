@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 const links = [
   { href: "/", label: "Workspace" },
   { href: "/map", label: "Field map" },
+  { href: "/network", label: "Water network" },
   { href: "/parampara", label: "Parampara" },
   { href: "/about", label: "About" },
 ];
@@ -17,6 +18,7 @@ export function SiteNav() {
   const [open, setOpen] = useState(false);
   const [dark, setDark] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
     const stored = window.localStorage.getItem("jalsaarthi-theme");
@@ -24,6 +26,13 @@ export function SiteNav() {
     setDark(nextDark);
     document.documentElement.dataset.theme = nextDark ? "dark" : "light";
     setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    const update = () => setScrolled(window.scrollY > 24);
+    update();
+    window.addEventListener("scroll", update, { passive: true });
+    return () => window.removeEventListener("scroll", update);
   }, []);
 
   function toggleTheme() {
@@ -34,7 +43,7 @@ export function SiteNav() {
   }
 
   return (
-    <header className="site-nav-shell">
+    <header className={scrolled ? "site-nav-shell is-scrolled" : "site-nav-shell"}>
       <nav className="site-nav" aria-label="Main navigation">
         <Link className="brand" href="/" onClick={() => setOpen(false)}>
           <span className="brand-mark"><Waves size={19} strokeWidth={2.1} /></span>

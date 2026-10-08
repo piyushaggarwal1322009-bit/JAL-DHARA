@@ -14,7 +14,7 @@
 | Motion | Framer Motion, optional | Restrained state transitions; honor reduced motion. |
 | Validation | Zod | Parse fixture, form snapshots, API input, and provider output at boundaries. |
 | Engine | Pure TypeScript functions called by Node API routes | Deterministic water balance and exhaustive ≤8-repair subset search. |
-| Map | Leaflet + React Leaflet + OpenStreetMap | User-entered, source-attributed field records; JSON/CSV import/export and local browser storage. |
+| Map and distance view | Leaflet + React Leaflet + OpenStreetMap + Haversine/Prim utilities | Source-attributed points, pairwise distances, a proposed minimum link tree, and a user-rate cost calculation; local browser storage. |
 | Data | Typed illustrative simulation fixture and user-entered map records | No tank-level real dataset, database, or live feed is configured. |
 | Optional AI | Groq API via `groq-sdk` | One structured text-to-form proposal, server-side only; manual fallback is mandatory. |
 | Tests | Vitest | Golden arithmetic, invariants, optimizer ranking, and validation. |

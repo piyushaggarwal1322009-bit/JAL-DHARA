@@ -15,6 +15,8 @@ The backend is part of the Next.js application; it does not need a separate serv
 | `GET /about` | Next.js page | Methodology and limits. |
 | `POST /api/diagnose` | Next.js Node route, optional | Groq text extraction into an unconfirmed, validated proposal. |
 | `GET /map` | Next.js page | Map-based, source-attributed field data entry. |
+| `GET /network` | Next.js page | Mapped tank names, pairwise distances, and a straight-line length × user-rate cost estimate. |
+| `GET /network` | Next.js page | Mapped tank names, geodesic distances, and transparent length × rate estimate. |
 | `POST /api/simulate` | Next.js Node route | Validate a scenario and compute its result on the server; request capped at 64 KB. |
 | `POST /api/optimize` | Next.js Node route | Validate a scenario and INR budget and compute repair options; request capped at 64 KB. |
 
@@ -43,6 +45,8 @@ The strict JSON schema must require all fields of `AIExtractedReport` and set `a
 ## Scenario and map persistence
 
 Map records currently live in `localStorage` on the user's device. JSON import/export and CSV export provide backup and transfer. This does not provide server backup, access control, collaboration, or cross-device sync. Before adding shared persistence, select a database and authentication provider, enforce per-user row access, and preserve provenance fields. Never put a database service-role key in browser code.
+
+Saving a tank record routes to `/network`. Its pair distances use the Haversine geodesic formula. A Prim minimum spanning tree supplies a proposed minimum straight-line link length; it is not claimed to be the actual water-channel topology. Cost is that length multiplied by the user's rate in INR/metre. The rate must come from a local schedule or quote; the app does not generate or assume one.
 
 ## Security, observability, and portability
 

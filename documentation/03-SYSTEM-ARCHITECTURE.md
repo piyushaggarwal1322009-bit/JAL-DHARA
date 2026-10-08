@@ -31,7 +31,7 @@ Workspace state includes the editable scenario, selected element, last committed
 
 ## Server boundary
 
-`/api/diagnose` accepts a bounded narrative, calls Groq using a server-only `GROQ_API_KEY`, validates structured output, and returns an **unconfirmed proposal**. `/api/simulate` and `/api/optimize` validate bounded requests and run the deterministic engine on the server. No route accepts AI-produced flow, capacity, cost, or efficiency as authoritative. The `/map` page stores user-supplied records in browser storage; it has no database or user account. See [Backend](BACKEND.md) and [Field map](13-FIELD-MAP-AND-DATA.md).
+`/api/diagnose` accepts a bounded narrative, calls Groq using a server-only `GROQ_API_KEY`, validates structured output, and returns an **unconfirmed proposal**. `/api/simulate` and `/api/optimize` validate bounded requests and run the deterministic engine on the server. No route accepts AI-produced flow, capacity, cost, or efficiency as authoritative. The `/map` page stores user-supplied records in browser storage. `/network` computes distances and a minimum straight-line connection estimate from mapped tank locations; it only prices a user-supplied per-metre rate. Neither page has database persistence or user accounts. See [Backend](BACKEND.md) and [Field map](13-FIELD-MAP-AND-DATA.md).
 
 ## Data flow, errors, security
 
